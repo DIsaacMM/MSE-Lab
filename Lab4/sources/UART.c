@@ -23,9 +23,9 @@
  * @return The value to be written to the USART BRR register
  */
 
-uint32_t baud_rate(uint32_t clk, uint32_t brr)
+uint32_t baud_rate(uint32_t clk, uint32_t baud)
 {
-    return (clk/brr) + (brr/2); 
+    return ((clk + (baud / 2U)) / baud);
 }
 
 /**
@@ -48,6 +48,7 @@ void uart_init()
     
     // Enable Transmitter and peripheral 
     USART2->CR1 |= (1U << 3);   // Enable Transmitter (TE bit)
+    USART2->CR1 |= (1U << 2);   // Enable Recieven (RE bit)
     USART2->CR1 |= (1U << 13);  // Enable USART (UE bit)
 }
 
@@ -70,3 +71,4 @@ void uart_write(char c)
     // Write the 8 bit character to the data register for transmission
     USART2->DR = c; 
 }
+

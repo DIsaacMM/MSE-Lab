@@ -26,6 +26,7 @@
 /*** Includes ***/
 #include <stdint.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 /*** Preprocessor Definitions ***/
 
@@ -48,7 +49,7 @@
  *
  * @return None.
  */
-void utils_snprintf(char *dst, const char *format, ...);
+void utils_snprintf(char *dst, const char *format, va_list args);
 
 /**
  * @brief Convert data from integer type into an ASCII string

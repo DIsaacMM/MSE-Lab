@@ -52,17 +52,11 @@ static uint32_t utils_printInt(char *dst, int32_t num, uint8_t sign, uint32_t ba
  *
  * @return None.
  * 
- * Ejemplo: mi_funcion(buffer, "Edad: %d", 25);
- * 
- * printf("Edad: %d, Nombre: %s", 25, "Juan");
- * 25 y "Juan" → son argumentos variables
  */
 
  //         printf (Destino de donde se guardara el string, Lo que se va a imprimir dentro de las "", las variables que van afuera de los "")
-void utils_snprintf(char *dst, const char *format, ...)
+void utils_snprintf(char *dst, const char *format, va_list args)
 {
-    va_list args;               // crea la “caja” donde vas a manejar los argumentos variables
-    va_start(args, format);     // activa esa caja y le dice desde dónde empezar a leer
 
     // Comienza a leer lo que hay dentro de ""
     while (*format)
@@ -123,7 +117,6 @@ void utils_snprintf(char *dst, const char *format, ...)
         format++;
     }
     *dst = '\0';   //Agregar un final del string poniendo un NULL
-    va_end(args);
 }
 
 

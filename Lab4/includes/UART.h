@@ -13,6 +13,7 @@
 #define UART_H  // define
 
 #include <stdint.h>
+#include "GPIO.h"
 #include "stm32f4xx.h" 
 
 #define SYSTEM_CLOCK 16000000  /**< System clock frequency in Hz (16MHz) */
@@ -55,5 +56,6 @@ void uart_init();
  */
 
 void uart_write(char c); 
+
 
 #endif /* UART_H */
