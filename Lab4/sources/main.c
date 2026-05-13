@@ -1,9 +1,10 @@
 ﻿/**
  * @file main.c
- * @brief Real-time LED brightness control using potentiometer and PWM
+ * @brief Real-time potentiometer voltage readings by UART communication protocol
  * 
  * This program reads a potentiometer connected to ADC channel 0 and
- * controls LED brightness via PWM on TIM2 channel 1.
+ * sends the voltage readings to the computer through a UART communication protocol
+ * to visualize the output in the serial monitor
  *
  * @authors David Mijares
  */
@@ -61,7 +62,6 @@ int main(void)
     // Timer
     timer_init(TIMx); // Initialize Timer
 
-    serial_printf("Program Initialized \n"); // No se logra ver en el serial monitor
     // Infinite loop - real-time control
     while (1)
     {

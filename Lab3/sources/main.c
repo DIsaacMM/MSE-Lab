@@ -30,8 +30,6 @@
 // Conversion Mode Selection
 #define CONTINUOUS_CONVERSION_MODE 1  // Use continuous mode for real-time control
 
-// Function prototypes
-void PWM_init(void);
 
 /**
  * @brief Main function - entry point
@@ -43,8 +41,8 @@ int main(void)
     uint32_t adc_value;
     uint8_t duty_cycle;
     
-    // Initialize PWM with 0% duty cycle (LED off)
     pwm_init(PWM_GPIOx, TIMx, PWM_PIN);
+    pwm_setSignal(TIMx, CHANNELx, FREQUENCY, 0);  // Start with LED off
     
     // Initialize sensor (ADC) on the specified channel
     sensor_init(ADC_CHANNEL, ADC_GPIOx, ADC_PIN, ANALOG_MODE);
@@ -72,15 +70,4 @@ int main(void)
     }
     
     return 0;  // Never reached
-}
-
-/**
- * @brief Initializes PWM peripheral
- * 
- * Sets up PWM with initial 0% duty cycle (LED off)
- */
-void PWM_init(void)
-{
-    pwm_init(PWM_GPIOx, TIMx, PWM_PIN);
-    pwm_setSignal(TIMx, CHANNELx, FREQUENCY, 0);  // Start with LED off
 }

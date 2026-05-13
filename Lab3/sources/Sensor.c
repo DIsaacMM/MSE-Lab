@@ -54,7 +54,7 @@ void sensor_init(uint8_t channel, port_t p, uint8_t pin, uint8_t mode)
  *        - 1: Continuous conversion (repeated readings until stopped)
  * @return No return value
  * 
- * @note If channel is invalid (>18), function returns without starting conversion
+ * @not If channel is invalid (>18), function returns without starting conversion
  * @note For continuous mode, call adc_stopContinuousConversion() to stop
  */
 void sensor_startConversion(uint8_t channel, uint8_t conversion)

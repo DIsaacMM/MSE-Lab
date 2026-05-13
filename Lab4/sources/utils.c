@@ -54,7 +54,6 @@ static uint32_t utils_printInt(char *dst, int32_t num, uint8_t sign, uint32_t ba
  * 
  */
 
- //         printf (Destino de donde se guardara el string, Lo que se va a imprimir dentro de las "", las variables que van afuera de los "")
 void utils_snprintf(char *dst, const char *format, va_list args)
 {
 
