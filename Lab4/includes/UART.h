@@ -15,9 +15,20 @@
 #include <stdint.h>
 #include "GPIO.h"
 #include "stm32f4xx.h" 
+#include <stddef.h>
 
 #define SYSTEM_CLOCK 16000000  /**< System clock frequency in Hz (16MHz) */
 #define STANDARD_BRR 115200    /**< Standard baud rate for UART communication */
+#define UART_BUFFER_SIZE 128
+#define UART_TX_RX_MASK 0xFF
+typedef struct uart_ring_buffer
+{
+    volatile uint8_t buffer[UART_BUFFER_SIZE]; 
+    volatile uint8_t head; 
+    volatile uint8_t tail; 
+
+} ringBuffer_t;
+
 
 /**
  * @brief Calculates the baud rate register value

@@ -12,6 +12,9 @@
 
 #include "UART.h"
 
+
+ringBuffer_t rxBuffer; 
+
 /**
  * @brief Calculates the baud rate register value
  * 
@@ -40,16 +43,36 @@ uint32_t baud_rate(uint32_t clk, uint32_t baud)
 
 void uart_init()
 {
+    __disable_irq(); 
+
+    rxBuffer.head = 0u; 
+    rxBuffer.tail = 0u; 
+    
     // Enable USART2 Clock 
     RCC->APB1ENR |= RCC_APB1ENR_USART2EN; 
 
     // Configure baud rate based on system clock
     USART2->BRR = baud_rate(SYSTEM_CLOCK, STANDARD_BRR); // System clock = 16MHz, Standard BRR = 115,200 
     
+
     // Enable Transmitter and peripheral 
     USART2->CR1 |= (1U << 3);   // Enable Transmitter (TE bit)
     USART2->CR1 |= (1U << 2);   // Enable Recieven (RE bit)
+
+    NVIC_EnableIRQ(USART2_IRQn); 
+
     USART2->CR1 |= (1U << 13);  // Enable USART (UE bit)
+
+    __enable_irq(); 
+}
+
+void USART2_IRQHandler(void)
+{
+    if(USART2->SR & USART_SR_RXNE)
+    {
+        rxBuffer.buffer[rxBuffer.head] = (uint8_t)(USART2->DR & UART_TX_RX_MASK); 
+        rxBuffer.head = (rxBuffer.head + 1u) % UART_BUFFER_SIZE; 
+    }
 }
 
 /**
@@ -72,3 +95,15 @@ void uart_write(char c)
     USART2->DR = c; 
 }
 
+
+void uart_read(uint8_t *buf)
+{
+    if(NULL != buf)
+    {
+        while (rxBuffer.tail != rxBuffer.head)
+        {
+            *buf++ = rxBuffer.buffer[rxBuffer.tail]; 
+            rxBuffer.tail = (rxBuffer.tail + 1u) % UART_BUFFER_SIZE; 
+        }
+    }
+}
