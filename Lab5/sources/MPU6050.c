@@ -16,14 +16,25 @@
  * @details Calls i2c_init() to set up the I2C peripheral, then wakes up the MPU6050
  *          by writing 0 to its power management register (clears the SLEEP bit).
  */
-void sensor_init(void)
+void mpu6050_init(port_t p, uint8_t scl_pin, uint8_t sda_pin, uint8_t mode)
 {
-    // Initialize the I2C driver (configures pins, clock speed, etc.)
+    // Enable GPIO port
+    gpio_initPort(p);
+
+    // Configure pins as Alternate Function
+    gpio_setPinMode(p, scl_pin, mode);
+    gpio_setPinMode(p, sda_pin, mode);
+
+    // Configure Alternate Function AF4 for I2C
+    gpio_setAlternateFunction(p, scl_pin, 4);
+    gpio_setAlternateFunction(p, sda_pin, 4);
+
+    // Initialize I2C peripheral
     i2c_init();
 
-    uint8_t data = 0;   // Value 0: disables SLEEP mode and selects internal oscillator
+    // Wake up MPU6050
+    uint8_t data = 0x00;
 
-    // Write 0 to the power management register (0x6B) to power on the MPU6050
     i2c_writeRegDevice(MPU6050_ADDR, PWR_MGMT_1, &data, 1);
 }
 
@@ -32,7 +43,7 @@ void sensor_init(void)
  * @param reg   Internal register address to write to.
  * @param value Byte value to be written.
  */
-void sensor_config(uint8_t reg, uint8_t value)
+void mpu6050_config(uint8_t reg, uint8_t value)
 {
     // Write a single byte 'value' to register 'reg' of the MPU6050
     i2c_writeRegDevice(MPU6050_ADDR, reg, &value, 1);
@@ -45,7 +56,7 @@ void sensor_config(uint8_t reg, uint8_t value)
  *          The 16-bit values are stored in big-endian order (high byte first) and
  *          then combined into the structure's fields.
  */
-void sensor_readData(MPU6050_t *data)
+void mpu6050_readData(MPU6050_t *data)
 {
     // Buffer to hold 14 bytes: accelerometer (6) + temperature (2) + gyroscope (6)
     uint8_t mpu6050_data[14];

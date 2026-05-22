@@ -14,6 +14,7 @@
 
 #include <stdint.h>
 #include "I2C.h"
+#include "GPIO.h"
 
 /* MPU6050 I2C address */
 #define MPU6050_ADDR 104    // Decimal: 104, Hex: 0x68
@@ -38,8 +39,8 @@ typedef struct
 } MPU6050_t;
 
 /* Function prototypes */
-void sensor_init(void);
-void sensor_config(uint8_t reg, uint8_t value);
-void sensor_readData(MPU6050_t *data);
+void mpu6050_init(port_t p, uint8_t scl_pin, uint8_t sda_pin, uint8_t mode);
+void mpu6050_config(uint8_t reg, uint8_t value);
+void mpu6050_readData(MPU6050_t *data);
 
 #endif // MPU6050_H
