@@ -33,21 +33,27 @@ uint32_t i2c_calc_ccr(uint32_t scl_freq_hz)
 uint32_t i2c_trise(uint32_t scl_freq_hz)
 {
     uint32_t max_rise_ns;
+
     if (scl_freq_hz <= 100000)
     {
-        max_rise_ns = 1000;   // Standard Mode (100 kHz)
+        max_rise_ns = 1000;   // Standard mode
     }
     else if (scl_freq_hz <= 400000)
     {
-        max_rise_ns = 300;    // Fast Mode (400 kHz)
+        max_rise_ns = 300;    // Fast mode
     }
     else
     {
-        max_rise_ns = 120;    // Fast Mode Plus (1 MHz) - optional
+        max_rise_ns = 120;    // Fast mode plus
     }
 
-    uint64_t temp = (uint64_t)max_rise_ns * SystemCoreClock;
-    uint32_t trise = (uint32_t)(temp / 1000000000UL) + 1;
+    // SystemCoreClock is typically in Hz
+    // Convert to MHz first to avoid overflow
+    uint32_t pclk_mhz = SystemCoreClock / 1000000UL;
+
+    // TRISE = (max_rise_ns * PCLK_MHz / 1000) + 1
+    uint32_t trise = ((max_rise_ns * pclk_mhz) / 1000UL) + 1UL;
+
     return trise;
 }
 
@@ -102,26 +108,40 @@ void i2c_init(void)
  */
 void i2c_writeRegDevice(uint8_t device_address, uint8_t register_address, uint8_t *data, uint32_t len)
 {
-    I2C1->CR1 |= I2C_CR1_START;                     // Generate START
-    while (!(I2C1->SR1 & I2C_SR1_SB));              // Wait for START sent
+    while (I2C1->SR2 & I2C_SR2_BUSY);
 
-    I2C1->DR = (device_address << 1);               // Send address + write bit
-    while (!(I2C1->SR1 & I2C_SR1_ADDR));            // Wait for address acknowledged
+    // START
+    I2C1->CR1 |= I2C_CR1_START;
 
-    // Clear ADDR flag by reading SR1 then SR2
+    while (!(I2C1->SR1 & I2C_SR1_SB));
+
+    // ADDRESS + WRITE
+    I2C1->DR = (device_address << 1);
+
+    while (!(I2C1->SR1 & I2C_SR1_ADDR));
+
+    // CLEAR ADDR
     (void)I2C1->SR1;
     (void)I2C1->SR2;
 
-    I2C1->DR = register_address;                    // Send register address
-    while (!(I2C1->SR1 & I2C_SR1_TXE));             // Wait until transmitted
+    // REGISTER
+    I2C1->DR = register_address;
 
-    for (uint32_t i = 0; i < len; i++)
+    while (!(I2C1->SR1 & I2C_SR1_TXE));
+
+    // DATA
+    for(uint32_t i = 0; i < len; i++)
     {
-        I2C1->DR = data[i];                         // Send data byte
-        while (!(I2C1->SR1 & I2C_SR1_TXE));         // Wait for TX buffer empty
+        I2C1->DR = data[i];
+
+        while (!(I2C1->SR1 & I2C_SR1_TXE));
     }
 
-    I2C1->CR1 |= I2C_CR1_STOP;                      // Generate STOP
+    // WAIT BTF
+    while (!(I2C1->SR1 & I2C_SR1_BTF));
+
+    // STOP
+    I2C1->CR1 |= I2C_CR1_STOP;
 }
 
 /**
@@ -180,41 +200,57 @@ void i2c_writeDevice(uint8_t device_address, uint8_t *data, uint32_t len)
  */
 void i2c_readRegDevice(uint8_t device_address, uint8_t register_address, uint8_t *data, uint32_t len)
 {
-    // ----- Write phase: send register address -----
+    // WAIT BUSY
+    while (I2C1->SR2 & I2C_SR2_BUSY);
+
+    // START
     I2C1->CR1 |= I2C_CR1_START;
+
     while (!(I2C1->SR1 & I2C_SR1_SB));
 
-    I2C1->DR = (device_address << 1);               // Write address
+    // WRITE ADDRESS
+    I2C1->DR = (device_address << 1);
+
     while (!(I2C1->SR1 & I2C_SR1_ADDR));
+
     (void)I2C1->SR1;
     (void)I2C1->SR2;
 
-    I2C1->DR = register_address;                    // Register address
+    // REGISTER ADDRESS
+    I2C1->DR = register_address;
+
     while (!(I2C1->SR1 & I2C_SR1_TXE));
 
-    // ----- Read phase: repeated start and read data -----
-    I2C1->CR1 |= I2C_CR1_START;                     // Repeated START
+    // REPEATED START
+    I2C1->CR1 |= I2C_CR1_START;
+
     while (!(I2C1->SR1 & I2C_SR1_SB));
 
-    I2C1->DR = (device_address << 1) | 1;           // Read address (R/W = 1)
+    // READ ADDRESS
+    I2C1->DR = (device_address << 1) | 1;
+
     while (!(I2C1->SR1 & I2C_SR1_ADDR));
+
+    // ENABLE ACK
+    I2C1->CR1 |= I2C_CR1_ACK;
+
     (void)I2C1->SR1;
     (void)I2C1->SR2;
 
-    I2C1->CR1 |= I2C_CR1_ACK;                       // Enable ACK for incoming bytes
-
-    for (uint32_t i = 0; i < len; i++)
+    for(uint32_t i = 0; i < len; i++)
     {
-        if (i == len - 1)                           // Last byte
+        // LAST BYTE
+        if(i == (len - 1))
         {
-            I2C1->CR1 &= ~I2C_CR1_ACK;              // Disable ACK -> NACK
-            I2C1->CR1 |= I2C_CR1_STOP;              // Generate STOP before reading
+            I2C1->CR1 &= ~I2C_CR1_ACK;
+            I2C1->CR1 |= I2C_CR1_STOP;
         }
-        while (!(I2C1->SR1 & I2C_SR1_RXNE));        // Wait for data received
-        data[i] = I2C1->DR;                         // Read byte
+
+        while (!(I2C1->SR1 & I2C_SR1_RXNE));
+
+        data[i] = I2C1->DR;
     }
 }
-
 /**
  * @brief Read multiple bytes directly from an I2C device (no register address).
  * @param device_address   7-bit I2C device address.

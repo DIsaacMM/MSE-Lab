@@ -10,6 +10,7 @@
  */
 
 #include "MPU6050.h"   // Contains MPU6050 address, register definitions, and MPU6050_t struct
+#include "serial.h"
 
 /**
  * @brief Initializes the MPU6050 sensor.
@@ -18,24 +19,35 @@
  */
 void mpu6050_init(port_t p, uint8_t scl_pin, uint8_t sda_pin, uint8_t mode)
 {
-    // Enable GPIO port
     gpio_initPort(p);
-
-    // Configure pins as Alternate Function
+    // Alternate Function mode
     gpio_setPinMode(p, scl_pin, mode);
     gpio_setPinMode(p, sda_pin, mode);
 
-    // Configure Alternate Function AF4 for I2C
+
+    // AF4 for I2C1
     gpio_setAlternateFunction(p, scl_pin, 4);
     gpio_setAlternateFunction(p, sda_pin, 4);
 
-    // Initialize I2C peripheral
+    // Open-drain
+    gpio[p]->OTYPER |= (1 << scl_pin);
+    gpio[p]->OTYPER |= (1 << sda_pin);
+
+    // Pull-up
+    gpio[p]->PUPDR &= ~(3 << (scl_pin * 2));
+    gpio[p]->PUPDR |=  (1 << (scl_pin * 2));
+
+    gpio[p]->PUPDR &= ~(3 << (sda_pin * 2));
+    gpio[p]->PUPDR |=  (1 << (sda_pin * 2));
+    
+
     i2c_init();
 
-    // Wake up MPU6050
+
     uint8_t data = 0x00;
 
     i2c_writeRegDevice(MPU6050_ADDR, PWR_MGMT_1, &data, 1);
+
 }
 
 /**
