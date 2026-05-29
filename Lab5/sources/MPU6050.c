@@ -10,7 +10,7 @@
  */
 
 #include "MPU6050.h"   // Contains MPU6050 address, register definitions, and MPU6050_t struct
-#include "serial.h"
+
 
 /**
  * @brief Initializes the MPU6050 sensor.

@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include "I2C.h"
 #include "GPIO.h"
+#include "serial.h"
 
 /* MPU6050 I2C address */
 #define MPU6050_ADDR 0x68
